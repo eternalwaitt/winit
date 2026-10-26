@@ -144,6 +144,17 @@ impl<T> EventLoopBuilderExtWayland for EventLoopBuilder<T> {
 ///
 /// [`Window`]: crate::window::Window
 pub trait WindowExtWayland {
+    /// Starts a copy-only file drag through the window's existing Wayland data device.
+    ///
+    /// Call while handling a primary-button drag on this window. Paths must be absolute.
+    /// The completion callback runs once when the drag ends, with `true` only after
+    /// the target reports a completed copy. Returns an error on X11 or without a valid grab.
+    fn start_file_drag(
+        &self,
+        files: &[std::path::PathBuf],
+        completed: Box<dyn FnOnce(bool) + Send>,
+    ) -> io::Result<()>;
+
     /// Returns `xdg_toplevel` of the window or [`None`] if the window is X11 window.
     fn xdg_toplevel(&self) -> Option<NonNull<c_void>>;
 
@@ -175,6 +186,21 @@ pub trait WindowExtWayland {
 }
 
 impl WindowExtWayland for Window {
+    fn start_file_drag(
+        &self,
+        files: &[std::path::PathBuf],
+        completed: Box<dyn FnOnce(bool) + Send>,
+    ) -> io::Result<()> {
+        match &self.window {
+            #[cfg(wayland_platform)]
+            crate::platform_impl::Window::Wayland(window) => window.start_file_drag(files, completed),
+            #[cfg(x11_platform)]
+            crate::platform_impl::Window::X(_) => {
+                Err(io::Error::new(io::ErrorKind::Unsupported, "not a Wayland window"))
+            },
+        }
+    }
+
     #[inline]
     fn xdg_toplevel(&self) -> Option<NonNull<c_void>> {
         #[allow(clippy::single_match)]

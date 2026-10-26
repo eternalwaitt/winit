@@ -40,6 +40,7 @@ pub use state::WindowState;
 
 /// The Wayland window.
 pub struct Window {
+    clipboard: Arc<super::clipboard::ClipboardState>,
     /// Reference to the underlying SCTK window.
     window: SctkWindow,
 
@@ -217,6 +218,7 @@ impl Window {
         event_loop_awakener.ping();
 
         Ok(Self {
+            clipboard: state.clipboard.clone(),
             window,
             display,
             monitors,
@@ -633,6 +635,14 @@ impl Window {
     pub fn focus_window(&self) {}
 
     #[inline]
+    pub fn start_file_drag(
+        &self,
+        files: &[std::path::PathBuf],
+        completed: Box<dyn FnOnce(bool) + Send>,
+    ) -> std::io::Result<()> {
+        self.clipboard.start_file_drag(self.surface(), files, completed)
+    }
+
     pub fn surface(&self) -> &WlSurface {
         self.window.wl_surface()
     }

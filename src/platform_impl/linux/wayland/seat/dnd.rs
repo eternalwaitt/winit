@@ -310,9 +310,19 @@ impl DataSourceHandler for WinitState {
 
     fn dnd_dropped(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &WlDataSource) {}
 
-    fn dnd_finished(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &WlDataSource) {}
+    fn dnd_finished(&mut self, _: &Connection, _: &QueueHandle<Self>, source: &WlDataSource) {
+        self.clipboard.finish_drag(source, true);
+    }
 
-    fn action(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &WlDataSource, _: DndAction) {}
+    fn action(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        source: &WlDataSource,
+        action: DndAction,
+    ) {
+        self.clipboard.drag_action(source, action);
+    }
 }
 
 sctk::delegate_data_device!(WinitState);
